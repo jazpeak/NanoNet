@@ -1,0 +1,26 @@
+# Build directories
+build/
+bin/
+lib/
+
+# CMake
+CMakeCache.txt
+CMakeFiles/
+Makefile
+cmake_install.cmake
+install_manifest.txt
+*.cmake
+
+# IDE settings
+.vscode/
+.idea/
+*.swp
+*~
+
+# Python (for tests/scripts)
+__pycache__/
+*.pyc
+*.pt
+*.onnx
+*.onnx.data
+*.txt
