@@ -1,4 +1,4 @@
-# Tiny Inference Engine
+# NanoNet
 
 A lightweight, dependency-free (runtime) C++ inference engine for running simple ONNX models.
 
