@@ -40,13 +40,13 @@ The project includes an end-to-end test with the MNIST dataset.
    Inside the `build` directory, run the Python scripts to train a simple PyTorch model, export it to ONNX, and dump test data.
    ```bash
    # Generates mnist_mlp.pt and data folder
-   python3 ../scripts/train_mnist.py 
+   python3 ../mnist_scripts/train.py 
    
    # Exports to mnist_mlp.onnx and verifies correctness
-   python3 ../scripts/export_onnx.py 
+   python3 ../mnist_scripts/export.py 
    
    # Dumps input/output vectors for C++ verification
-   python3 ../scripts/dump_test_data.py 
+   python3 ../mnist_scripts/dump.py 
    ```
 3. **Run the inference engine**:
    ```bash

@@ -18,7 +18,10 @@ torch.onnx.export(
     "mnist_mlp.onnx",
     input_names=["X"],
     output_names=["Y"],
-    opset_version=13
+    opset_version=18,
+    export_params=True,
+    do_constant_folding=True  # ← THIS LINE
 )
+
 
 print("Exported mnist_mlp.onnx")
