@@ -3,6 +3,10 @@ import torch.nn as nn
 import torch.optim as optim
 from torchvision import datasets, transforms
 
+# Device configuration
+device = torch.device('cuda' if torch.cuda.is_available() else 'mps' if torch.backends.mps.is_available() else 'cpu')
+print(f"Using device: {device}")
+
 # Data
 transform = transforms.ToTensor()
 train_ds = datasets.MNIST("./data", train=True, download=True, transform=transform)
@@ -17,7 +21,7 @@ model = nn.Sequential(
     nn.Linear(28*28, 128),
     nn.ReLU(),
     nn.Linear(128, 10)   # logits (no softmax)
-)
+).to(device)
 
 opt = optim.Adam(model.parameters(), lr=1e-3)
 loss_fn = nn.CrossEntropyLoss()
@@ -26,6 +30,7 @@ loss_fn = nn.CrossEntropyLoss()
 model.train()
 for epoch in range(3):
     for x, y in train_loader:
+        x, y = x.to(device), y.to(device)
         opt.zero_grad()
         logits = model(x)
         loss = loss_fn(logits, y)
@@ -39,6 +44,7 @@ correct = 0
 total = 0
 with torch.no_grad():
     for x, y in test_loader:
+        x, y = x.to(device), y.to(device)
         logits = model(x)
         pred = torch.argmax(logits, dim=1)
         correct += (pred == y).sum().item()
