@@ -1,6 +1,10 @@
 # NanoNet
 
-A lightweight, dependency-free (runtime) C++ inference engine for running simple ONNX models.
+A lightweight, runtime C++ inference engine for running simple ONNX models.
+
+## Future Goals
+I plan to extend support to any onnx/ML/DL model in version 2 of this project. In Version 3, i plan to make it into a full training framework, similar to Pytorch.
+Further, Several optimizations are possible including using CUDA, which is a distant Goal once i get time and the knowledge in several domains. Thanks for reading this!!!
 
 ## Features
 
