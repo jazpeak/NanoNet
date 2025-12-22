@@ -37,8 +37,11 @@ The project includes an end-to-end test with the MNIST dataset.
 
 1. **Build the project** (see above).
 2. **Generate the model and data**:
-   Inside the `build` directory, run the Python scripts to train a simple PyTorch model, export it to ONNX, and dump test data.
+   **Important:** Run these scripts from inside the `build` directory so the generated files are placed where the engine expects them.
+
    ```bash
+   cd build
+   
    # Generates mnist_mlp.pt and data folder
    python3 ../mnist_scripts/train.py 
    
