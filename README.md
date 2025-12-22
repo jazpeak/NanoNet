@@ -88,3 +88,6 @@ The project includes an end-to-end test with the MNIST dataset.
 
 ## Note
 This is an educational project aimed at understanding the internals of deep learning inference engines. It is not optimized for production use on large models.
+
+## Note
+LLMs were used to generate the documentation and README.md file. It was also used to partially generate the train.py, export.py, dump.py, and test_mnist.cpp files. The rest was done by me.
