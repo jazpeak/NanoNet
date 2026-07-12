@@ -4,6 +4,7 @@
 #include <thread>
 #include "tensor.h"
 #include "ops.h"
+using namespace std;
 
 
 
@@ -17,11 +18,10 @@ public:
     MatMulNode(const Tensor& A, const Tensor& B, Tensor& C,bool transB = false) : A(A), B(B), C(C) ,transB(transB){}
 
     void forward() override {
-    	int threads = std::thread::hardware_concurrency();
+    	int threads = thread::hardware_concurrency();
         if (threads <= 0) threads = 1;
         matmul_parallel(A, B, C, threads, transB);
-        //matmul_parallel(A, B, C,4,transB);
-    } // Added missing closing brace
+    }
 };
 
 class AddNode : public Node{
@@ -49,6 +49,18 @@ public:
     }
 };
 
+class SoftmaxNode : public Node {
+private:
+    const Tensor& A;
+    Tensor& C;
+public:
+    SoftmaxNode(const Tensor& A, Tensor& C) : A(A), C(C) {}
+
+    void forward() override {
+        softmax(A, C);
+    }
+};
+
 class FlattenNode : public Node {
 private:
     const Tensor& A;
@@ -62,6 +74,6 @@ public:
         int total = A.rows() * A.cols();
         assert(C.rows() * C.cols() == total);
 
-        std::copy(A.data(), A.data() + total, C.data());
+        copy(A.data(), A.data() + total, C.data());
     }
 };

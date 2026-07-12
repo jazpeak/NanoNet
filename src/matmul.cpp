@@ -1,8 +1,10 @@
 #include "ops.h"
+#include "thread_pool.h"
 #include <cassert>
 #include <vector>
 #include <algorithm>
 #include <thread>
+#include <atomic>
 using namespace std;
 
 void matmul(const Tensor& A, const Tensor& B , Tensor& C){
@@ -12,14 +14,7 @@ void matmul(const Tensor& A, const Tensor& B , Tensor& C){
 
     int m = A.rows();
     int k = A.cols();
-    /* 
-       If transB is not supported in simple matmul, assume false. 
-       But current signature doesn't take transB?
-       Wait, simple matmul signature is `void matmul(const Tensor& A, const Tensor& B , Tensor& C)`. 
-       It implicitly assumes transB=false based on assertions A.cols() == B.rows().
-       I should probably leave it or check if it is used.
-       MatMulNode uses matmul_parallel.
-    */
+
     int n = B.cols();
 
 
@@ -47,26 +42,45 @@ static void matmul_worker(const float* a,
                           int m, int k, int n,
                           int row_start,
                           int row_end,bool transB) {
+    const int BLOCK_SIZE = 64;
 
 	if(!transB){
-    for (int i = row_start; i < row_end; ++i) {
-        for (int p = 0; p < k; ++p) {
-            float a_ip = a[i * k + p];
-            for (int j = 0; j < n; ++j) {
-                c[i * n + j] += a_ip * b[p * n + j];
+        for (int i = row_start; i < row_end; i += BLOCK_SIZE) {
+            for (int p = 0; p < k; p += BLOCK_SIZE) {
+                for (int j = 0; j < n; j += BLOCK_SIZE) {
+                    int i_end = min(i + BLOCK_SIZE, row_end);
+                    int p_end = min(p + BLOCK_SIZE, k);
+                    int j_end = min(j + BLOCK_SIZE, n);
+                    for (int ii = i; ii < i_end; ++ii) {
+                        for (int pp = p; pp < p_end; ++pp) {
+                            float a_ip = a[ii * k + pp];
+                            for (int jj = j; jj < j_end; ++jj) {
+                                c[ii * n + jj] += a_ip * b[pp * n + jj];
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }else{
+        for (int i = row_start; i < row_end; i += BLOCK_SIZE) {
+            for (int p = 0; p < k; p += BLOCK_SIZE) {
+                for (int j = 0; j < n; j += BLOCK_SIZE) {
+                    int i_end = min(i + BLOCK_SIZE, row_end);
+                    int p_end = min(p + BLOCK_SIZE, k);
+                    int j_end = min(j + BLOCK_SIZE, n);
+                    for (int ii = i; ii < i_end; ++ii) {
+                        for (int pp = p; pp < p_end; ++pp) {
+                            float a_ip = a[ii * k + pp];
+                            for (int jj = j; jj < j_end; ++jj) {
+                                c[ii * n + jj] += a_ip * b[jj * k + pp];
+                            }
+                        }
+                    }
+                }
             }
         }
     }
-}else{
-	for (int i = row_start; i < row_end; ++i) {
-        for (int p = 0; p < k; ++p) {
-            float a_ip = a[i * k + p];
-            for (int j = 0; j < n; ++j) {
-                c[i * n + j] += a_ip * b[j * k + p];
-            }
-        }
-    }
-}
 }
 
 
@@ -92,7 +106,8 @@ void matmul_parallel(const Tensor& A, const Tensor& B, Tensor& C, int num_thread
     num_threads = min(num_threads, m);
     int chunk = (m + num_threads - 1) / num_threads;
 
-    vector<thread> threads;
+    atomic<int> completed(0);
+    int tasks_submitted = 0;
 
     for (int t = 0; t < num_threads; t++) {
         int start = t * chunk;
@@ -100,16 +115,14 @@ void matmul_parallel(const Tensor& A, const Tensor& B, Tensor& C, int num_thread
 
         if (start >= end) break;
 
-        threads.emplace_back(
-            matmul_worker,
-            a, b, c,
-            m, k, n,
-            start, end,transB
-        );
+        tasks_submitted++;
+        get_thread_pool().enqueue([=, &completed]() {
+            matmul_worker(a, b, c, m, k, n, start, end, transB);
+            completed++;
+        });
     }
 
-    for (auto& th : threads) {
-        th.join();
+    while (completed < tasks_submitted) {
+        this_thread::yield();
     }
-
 }

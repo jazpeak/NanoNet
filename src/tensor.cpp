@@ -41,7 +41,7 @@ bool Tensor::load_from_file(const string& path){
 	ifstream in(path);
 
 	if (!in) {
-        std::cerr << "Failed to open " << path << "\n";
+        cerr << "Failed to open " << path << "\n";
         return false;
     }
 
@@ -49,7 +49,7 @@ bool Tensor::load_from_file(const string& path){
     in >> r >> c;
 
     if (r != rows_ || c != cols_) {
-        std::cerr << "Shape mismatch in " << path << "\n";
+        cerr << "Shape mismatch in " << path << "\n";
         return false;
     }
 

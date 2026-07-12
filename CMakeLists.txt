@@ -20,6 +20,7 @@ add_executable(test_mnist
     src/ops.cpp
     src/matmul.cpp
     src/onnx_loader.cpp
+    src/thread_pool.cpp
 )
 
 # Link against ONNX (this also links Protobuf)

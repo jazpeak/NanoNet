@@ -4,6 +4,7 @@
 #include "tensor.h"
 #include <vector>
 #include <memory>
+using namespace std;
 
 
 class Node{
@@ -14,13 +15,13 @@ class Node{
 
 class Graph{
 private:
-	std::vector<std::unique_ptr<Node>> nodes;
+	vector<unique_ptr<Node>> nodes;
 
 public:
 	Graph(){};
-	std::unordered_map<std::string, Tensor> tensors;
-	void add(std::unique_ptr<Node> node){
-		nodes.push_back(std::move(node));
+	unordered_map<string, Tensor> tensors;
+	void add(unique_ptr<Node> node){
+		nodes.push_back(move(node));
 	}
 
 	void run(){

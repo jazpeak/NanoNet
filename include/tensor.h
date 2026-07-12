@@ -5,6 +5,7 @@
 #include <string>
 
 #include <stddef.h>
+using namespace std;
 
 class Tensor{
 public:
@@ -22,11 +23,11 @@ public:
 	float& at(int i,int j);
 	const float& at(int i, int j) const;
 
-	bool load_from_file(const std::string& path);
+	bool load_from_file(const string& path);
 
 private:
 	int rows_;
 	int cols_;
-	std::vector<float> data_;
+	vector<float> data_;
 
 };

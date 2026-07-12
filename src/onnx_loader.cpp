@@ -8,18 +8,18 @@
 using namespace std;
 
 
-Graph ONNXLoader::load(const std::string& path){
+Graph ONNXLoader::load(const string& path){
 	onnx::ModelProto model;
 	
-	ifstream in(path,std::ios::binary);
+	ifstream in(path,ios::binary);
     if (!model.ParseFromIstream(&in)) {
-        throw std::runtime_error("Failed to load ONNX model");
+        throw runtime_error("Failed to load ONNX model");
     }
 
     const auto & graph_proto = model.graph();
 
-    std::filesystem::path model_path(path);
-    std::filesystem::path base_dir = model_path.parent_path();
+    filesystem::path model_path(path);
+    filesystem::path base_dir = model_path.parent_path();
 
     Graph graph;
     auto& tensors = graph.tensors;
@@ -38,10 +38,10 @@ Graph ONNXLoader::load(const std::string& path){
             // Let's assume (1, N) for now.
             rows = 1;
             cols = init.dims(0);
-            std::cout << "Warning: 1D Tensor " << init.name() << " treated as 1x" << cols << "\n";
+            cout << "Warning: 1D Tensor " << init.name() << " treated as 1x" << cols << "\n";
         } else {
              // Handle 3D+ or 0D if needed?
-             std::cout << "Warning: unexpected dim size " << init.dims_size() << " for " << init.name() << "\n";
+             cout << "Warning: unexpected dim size " << init.dims_size() << " for " << init.name() << "\n";
              if (init.dims_size() > 0) rows = init.dims(0);
              if (init.dims_size() > 1) cols = init.dims(1);
         }
@@ -50,19 +50,19 @@ Graph ONNXLoader::load(const std::string& path){
         size_t expected_bytes = rows * cols * sizeof(float);
 
         if (init.external_data_size() > 0) {
-            std::string location;
+            string location;
             unsigned long long offset = 0;
             
             for (int i=0; i<init.external_data_size(); ++i) {
                 const auto& entry = init.external_data(i);
                 if (entry.key() == "location") location = entry.value();
-                else if (entry.key() == "offset") offset = std::stoull(entry.value());
+                else if (entry.key() == "offset") offset = stoull(entry.value());
             }
 
-            std::filesystem::path data_path = base_dir / location;
-            std::ifstream ifs(data_path, std::ios::binary);
+            filesystem::path data_path = base_dir / location;
+            ifstream ifs(data_path, ios::binary);
             if (!ifs) {
-                 throw std::runtime_error("Could not open external data: " + data_path.string());
+                 throw runtime_error("Could not open external data: " + data_path.string());
             }
             
             ifs.seekg(offset);
@@ -70,18 +70,18 @@ Graph ONNXLoader::load(const std::string& path){
             // Handle INT64 specialized loading
             if (init.data_type() == 7) { // INT64
                 size_t num_elements = rows * cols;
-                std::vector<int64_t> buffer(num_elements);
+                vector<int64_t> buffer(num_elements);
                 ifs.read(reinterpret_cast<char*>(buffer.data()), num_elements * sizeof(int64_t));
                 for(size_t i=0; i<num_elements; ++i) t.data()[i] = (float)buffer[i];
             } else {
                  ifs.read(reinterpret_cast<char*>(t.data()), expected_bytes);
             }
             if (!ifs) {
-                 throw std::runtime_error("Failed to read external data from " + data_path.string());
+                 throw runtime_error("Failed to read external data from " + data_path.string());
             }
         }
         else if (!init.raw_data().empty()) {
-            const std::string& raw = init.raw_data();
+            const string& raw = init.raw_data();
             
             if (init.data_type() == 7) { // INT64
                  size_t num_elements = rows * cols;
@@ -91,10 +91,10 @@ Graph ONNXLoader::load(const std::string& path){
                  }
             } else {
                 if (raw.size() != expected_bytes) {
-                    std::cerr << "Warning: raw_data size mismatch for " << init.name() 
+                    cerr << "Warning: raw_data size mismatch for " << init.name() 
                               << " (got " << raw.size() << ", expected " << expected_bytes << ")\n";
                 }
-                std::memcpy(t.data(), raw.data(), std::min(raw.size(), expected_bytes));
+                memcpy(t.data(), raw.data(), min(raw.size(), expected_bytes));
             }
         }
         else {
@@ -105,11 +105,11 @@ Graph ONNXLoader::load(const std::string& path){
                  }
             } else {
                  // Might be int32_data etc. but we only support float in this engine
-                 std::cerr << "Warning: no float data found for identifier " << init.name() << "\n";
+                 cerr << "Warning: no float data found for identifier " << init.name() << "\n";
             }
         }
 
-        tensors[init.name()] = std::move(t);
+        tensors[init.name()] = move(t);
     }
 
 	for (const auto& input : graph_proto.input()) {
@@ -155,11 +155,11 @@ Graph ONNXLoader::load(const std::string& path){
 
 		  
 		    if (alpha != 1.0f || beta != 1.0f) {
-		        throw std::runtime_error("Only alpha=1, beta=1 supported for Gemm");
+		        throw runtime_error("Only alpha=1, beta=1 supported for Gemm");
 		    }
 
 		    if (!transB) {
-		        throw std::runtime_error("Only transB=1 supported for Gemm");
+		        throw runtime_error("Only transB=1 supported for Gemm");
 		    }
 
 		    int m = A.rows();
@@ -191,11 +191,17 @@ Graph ONNXLoader::load(const std::string& path){
 			tensors[node.output(0)] = Tensor(A.rows(), A.cols());
 			graph.add(make_unique<ReluNode>(A,tensors[node.output(0)]));
 		}
+		else if (op=="Softmax")
+		{
+			Tensor& A = tensors[node.input(0)];
+			tensors[node.output(0)] = Tensor(A.rows(), A.cols());
+			graph.add(make_unique<SoftmaxNode>(A,tensors[node.output(0)]));
+		}
 		else if (op=="Reshape"){
 			Tensor& A = tensors[node.input(0)];
             Tensor& shape_tensor = tensors[node.input(1)];
             
-            std::vector<int> new_dims;
+            vector<int> new_dims;
             int total_size = A.rows() * A.cols();
             int inferred_idx = -1;
             int product = 1;
@@ -227,7 +233,7 @@ Graph ONNXLoader::load(const std::string& path){
             tensors[node.output(0)] = Tensor(new_rows, new_cols);
             
             // Reusing FlattenNode since it just copies data
-            graph.add(std::make_unique<FlattenNode>(A, tensors[node.output(0)]));
+            graph.add(make_unique<FlattenNode>(A, tensors[node.output(0)]));
 		}
 		else if (op=="Flatten"){
 			Tensor& A = tensors[node.input(0)];
@@ -235,9 +241,9 @@ Graph ONNXLoader::load(const std::string& path){
 		    int features = A.cols();
 
 		    tensors[node.output(0)] = Tensor(batch, features);
-		        graph.add(std::make_unique<FlattenNode>(A, tensors[node.output(0)]));
+		        graph.add(make_unique<FlattenNode>(A, tensors[node.output(0)]));
 		}else{
-			std::cout << "No op as such: " << op << "\n";
+			cout << "No op as such: " << op << "\n";
 		}
     }
 
