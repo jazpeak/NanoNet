@@ -1,6 +1,6 @@
-## Author
+## Sole Author
 
-**Jazl Anwar Mundam Valappil** Only
+**Jazl Anwar Mundam Valappil** 
 - GitHub: [@jazpeak](https://github.com/jazpeak)
 - LinkedIn: [Jazl Anwar](https://www.linkedin.com/in/jazlanwar/)
 - Email: jazl24283@iiitd.ac.in
