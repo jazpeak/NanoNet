@@ -89,7 +89,8 @@ The project includes an end-to-end test with the MNIST dataset.
 - `src/`: Implementation of operators, tensor logic, and the ONNX loader.
 - `onnx/`: ONNX submodule (protobuf definitions).
 - `tests/`: specific accuracy tests.
-
+## Credits:
+Project was worked on by **Jazl Anwar ONLY**.
 ## Note
 This is an educational project aimed at understanding the internals of deep learning inference engines. It is not optimized for production use on large models.
 
