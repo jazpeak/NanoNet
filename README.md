@@ -5,7 +5,6 @@
 - LinkedIn: [Jazl Anwar](https://www.linkedin.com/in/jazlanwar/)
 - Email: jazl24283@iiitd.ac.in
 - Number: +91 8129441888
-# Operating Systems Portfolio
 # NanoNet
 
 A lightweight, runtime C++ inference engine for running simple ONNX models.
